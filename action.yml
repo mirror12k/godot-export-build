@@ -5,29 +5,14 @@ inputs:
     description: 'The version of Godot Engine to use.'
     required: true
   project-path:
-    description: 'Path to the Godot project directory.'
-    required: true
+    description: 'Path to the Godot project directory. Defaults to the current directory.'
+    required: false
+    default: '.'
 runs:
   using: 'composite'
   steps:
-    - run: |
-      wget -q https://downloads.tuxfamily.org/godotengine/${{ inputs.godot-version }}/Godot_v${{ inputs.godot-version }}-stable_linux.x86_64.zip
-      unzip Godot_v${{ inputs.godot-version }}-stable_linux.x86_64.zip
-      chmod +x Godot_v${{ inputs.godot-version }}-stable_linux.x86_64
-      cd ${{ inputs.project-path }}
-      while IFS= read -r line; do
-        if [[ $line == name* ]]; then
-          preset_name=$(echo $line | cut -d'=' -f2 | tr -d '"')
-        fi
-        if [[ $line == export_path* ]]; then
-          export_path=$(echo $line | cut -d'=' -f2 | tr -d '"')
-          mkdir -p $(dirname $export_path)
-          ../Godot_v${{ inputs.godot-version }}-stable_linux.x86_64 --headless --export-release "$preset_name" "$export_path" --quit
-          if [ ! "$(ls -A $export_path)" ]; then
-            echo "Export directory $export_path is empty."
-            exit 1
-          fi
-          echo "Exported $preset_name to $export_path"
-        fi
-      done < export_presets.cfg
+    - run: ${{ github.action_path }}/export-godot.sh
+      env:
+        GODOT_VERSION: '${{ inputs.godot-version }}'
+        PROJECT_PATH: '${{ inputs.project-path }}'
       shell: bash
